@@ -1,0 +1,100 @@
+{
+	"info": {
+		"_postman_id": "b247354a-5373-421f-b0d4-b28315c3c116",
+		"name": "Transjakarta",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "9087645",
+		"_collection_link": "https://mongga.postman.co/workspace/Team-Workspace~1af3354d-a60f-4869-88ce-5e049fe1ac6f/collection/9087645-b247354a-5373-421f-b0d4-b28315c3c116?action=share&source=collection_link&creator=9087645"
+	},
+	"item": [
+		{
+			"name": "Ping",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/ping",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"ping"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Vehicles Location",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/vehicles/B1234XYZ/location",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"vehicles",
+						"B1234XYZ",
+						"location"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "1715000000",
+							"disabled": true
+						},
+						{
+							"key": "end",
+							"value": "1715009999",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Vehicles Location History",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8080/vehicles/B1234XYZ/history?start=1715000000&end=1715009999",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"vehicles",
+						"B1234XYZ",
+						"history"
+					],
+					"query": [
+						{
+							"key": "start",
+							"value": "1715000000"
+						},
+						{
+							"key": "end",
+							"value": "1715009999"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -14,16 +12,28 @@ services:
     environment:
       - DATABASE_URL=postgres://user:password@postgres:5432/fleet_management?sslmode=disable
       - RABBITMQ_URL=amqp://user:password@rabbitmq:5672/
+      - MQTT_BROKER=mqtt
   
   postgres:
-    image: postgres:13
+    platform: linux/x86_64
+    image: postgres:14.1-alpine
     restart: always
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: fleet_management
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database.sql:/docker-entrypoint-initdb.d/database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -34,6 +44,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mqtt:
     image: eclipse-mosquitto
@@ -41,6 +56,13 @@ services:
     ports:
       - "1883:1883"
       - "9001:9001"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-h", "localhost", "-t", "$SYS/#", "-C", "1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
 volumes:
   postgres_data:

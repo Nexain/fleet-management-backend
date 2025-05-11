@@ -1,11 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
-	"time"
+	"strconv"
 
+	"github.com/Nexain/fleet-management-backend/internal/service"
 	"github.com/gin-gonic/gin"
-	"fleet-management-backend/internal/service"
 )
 
 type HistoryHandler struct {
@@ -21,19 +22,19 @@ func (h *HistoryHandler) GetLocationHistory(c *gin.Context) {
 	start := c.Query("start")
 	end := c.Query("end")
 
-	startTime, err := time.ParseInt(start, 10, 64)
+	startTime, err := strconv.ParseInt(start, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid start time"})
 		return
 	}
 
-	endTime, err := time.ParseInt(end, 10, 64)
+	endTime, err := strconv.ParseInt(end, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid end time"})
 		return
 	}
 
-	history, err := h.locationService.GetLocationHistory(vehicleID, startTime, endTime)
+	history, err := h.locationService.GetLocationHistory(context.Background(), vehicleID, startTime, endTime)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve location history"})
 		return

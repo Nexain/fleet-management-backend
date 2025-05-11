@@ -22,7 +22,7 @@ To run the application locally, follow these steps:
 
 1. **Clone the repository**:
    ```
-   git clone https://github.com/yourusername/fleet-management-backend.git
+   git clone https://github.com/Nexain/fleet-management-backend.git
    cd fleet-management-backend
    ```
 
@@ -61,7 +61,4 @@ docker-compose up
 ```
 
 ## Testing
-You can use Postman to test the API endpoints. A Postman collection is included in the repository for your convenience.
-
-## Contributing
-Contributions are welcome! Please submit a pull request or open an issue for any enhancements or bug fixes.
+You can use Postman to test the API endpoints. A Postman collection is included in the repository for your convenience. Also a scipts to generate mqtt event also included in this repo.:

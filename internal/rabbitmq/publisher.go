@@ -1,63 +1,60 @@
 package rabbitmq
 
 import (
-    "encoding/json"
-    "log"
+	"encoding/json"
+	"fmt"
+	"log"
 
-    "github.com/streadway/amqp"
+	"github.com/streadway/amqp"
 )
 
-type Publisher struct {
-    Channel *amqp.Channel
-    Exchange string
-}
-
-type GeofenceEvent struct {
-    VehicleID string `json:"vehicle_id"`
-    Event     string `json:"event"`
-    Location  struct {
-        Latitude  float64 `json:"latitude"`
-        Longitude float64 `json:"longitude"`
-    } `json:"location"`
-    Timestamp int64 `json:"timestamp"`
-}
-
 func NewPublisher(channel *amqp.Channel, exchange string) *Publisher {
-    return &Publisher{
-        Channel: channel,
-        Exchange: exchange,
-    }
+	return &Publisher{
+		Channel:  channel,
+		Exchange: exchange,
+	}
 }
 
-func (p *Publisher) PublishGeofenceEvent(vehicleID string, latitude, longitude float64, timestamp int64) error {
-    event := GeofenceEvent{
-        VehicleID: vehicleID,
-        Event:     "geofence_entry",
-        Timestamp: timestamp,
-    }
-    event.Location.Latitude = latitude
-    event.Location.Longitude = longitude
+func (p *Publisher) PublishGeofenceEvent(input GeofenceEvent) error {
+	// Check if the channel is closed
+	if p.Channel == nil {
+		log.Println("RabbitMQ channel is closed, recreating...")
+		// newChannel, err := p.Channel.Connection.Channel
+		// if err != nil {
+		// 	return fmt.Errorf("failed to recreate RabbitMQ channel: %w", err)
+		// }
+		// p.Channel = newChannel
+	}
 
-    body, err := json.Marshal(event)
-    if err != nil {
-        log.Printf("Failed to marshal event: %v", err)
-        return err
-    }
+	event := GeofenceEvent{
+		VehicleID: input.VehicleID,
+		Event:     "geofence_entry",
+		Timestamp: input.Timestamp,
+	}
+	event.Location.Latitude = input.Location.Latitude
+	event.Location.Longitude = input.Location.Longitude
 
-    err = p.Channel.Publish(
-        p.Exchange,
-        "", // routing key
-        false,
-        false,
-        amqp.Publishing{
-            ContentType: "application/json",
-            Body:        body,
-        },
-    )
-    if err != nil {
-        log.Printf("Failed to publish event: %v", err)
-        return err
-    }
+	body, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("Failed to marshal event: %v", err)
+		return err
+	}
 
-    return nil
+	err = p.Channel.Publish(
+		p.Exchange,
+		"", // routing key
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+	if err != nil {
+		log.Printf("Failed to publish event: %v", err)
+		return err
+	}
+
+	fmt.Println("[Publisher] Success Publish GeofenceEvent, data:", string(body))
+	return nil
 }

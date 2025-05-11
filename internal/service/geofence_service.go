@@ -2,16 +2,16 @@ package service
 
 import (
 	"fmt"
+	"log"
 	"math"
-	"time"
 
-	"github.com/streadway/amqp"
+	"github.com/Nexain/fleet-management-backend/internal/rabbitmq"
 )
 
 type GeofenceService struct {
-	radius float64
-	center Location
-	publisher *RabbitMQPublisher
+	radius    float64
+	center    Location
+	publisher *rabbitmq.Publisher
 }
 
 type Location struct {
@@ -19,22 +19,23 @@ type Location struct {
 	Longitude float64
 }
 
-func NewGeofenceService(radius float64, center Location, publisher *RabbitMQPublisher) *GeofenceService {
+func NewGeofenceService(radius float64, center Location, publisher *rabbitmq.Publisher) *GeofenceService {
 	return &GeofenceService{
-		radius:   radius,
-		center:   center,
+		radius:    radius,
+		center:    center,
 		publisher: publisher,
 	}
 }
 
-func (g *GeofenceService) CheckGeofence(vehicleID string, location Location, timestamp int64) {
-	if g.isInsideGeofence(location) {
-		g.triggerGeofenceEvent(vehicleID, location, timestamp)
-	}
-}
+// func (g *GeofenceService) CheckGeofence(vehicleLat, vehicleLon float64) bool {
+// 	distance := g.calculateDistance(g.Lat, g.Lon, vehicleLat, vehicleLon)
+// 	log.Printf("Distance to geofence: %.2f meters", distance)
+// 	return distance <= g.Radius
+// }
 
-func (g *GeofenceService) isInsideGeofence(location Location) bool {
+func (g *GeofenceService) IsInsideGeofence(location Location) bool {
 	distance := g.calculateDistance(g.center, location)
+	log.Printf("Distance to geofence: %.2f meters", distance)
 	return distance <= g.radius
 }
 
@@ -55,17 +56,17 @@ func (g *GeofenceService) calculateDistance(loc1, loc2 Location) float64 {
 }
 
 func (g *GeofenceService) triggerGeofenceEvent(vehicleID string, location Location, timestamp int64) {
-	message := map[string]interface{}{
-		"vehicle_id": vehicleID,
-		"event":      "geofence_entry",
-		"location": map[string]float64{
-			"latitude":  location.Latitude,
-			"longitude": location.Longitude,
+	message := rabbitmq.GeofenceEvent{
+		VehicleID: vehicleID,
+		Event:     "geofence_entry",
+		Location: rabbitmq.Location{
+			Latitude:  location.Latitude,
+			Longitude: location.Longitude,
 		},
-		"timestamp": timestamp,
+		Timestamp: timestamp,
 	}
 
-	err := g.publisher.Publish("fleet.events", "geofence_alerts", message)
+	err := g.publisher.PublishGeofenceEvent(message)
 	if err != nil {
 		fmt.Printf("Failed to publish geofence event: %v\n", err)
 	}

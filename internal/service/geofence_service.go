@@ -1,0 +1,76 @@
+package service
+
+import (
+	"fmt"
+	"math"
+	"time"
+
+	"github.com/streadway/amqp"
+)
+
+type GeofenceService struct {
+	radius float64
+	center Location
+	publisher *RabbitMQPublisher
+}
+
+type Location struct {
+	Latitude  float64
+	Longitude float64
+}
+
+func NewGeofenceService(radius float64, center Location, publisher *RabbitMQPublisher) *GeofenceService {
+	return &GeofenceService{
+		radius:   radius,
+		center:   center,
+		publisher: publisher,
+	}
+}
+
+func (g *GeofenceService) CheckGeofence(vehicleID string, location Location, timestamp int64) {
+	if g.isInsideGeofence(location) {
+		g.triggerGeofenceEvent(vehicleID, location, timestamp)
+	}
+}
+
+func (g *GeofenceService) isInsideGeofence(location Location) bool {
+	distance := g.calculateDistance(g.center, location)
+	return distance <= g.radius
+}
+
+func (g *GeofenceService) calculateDistance(loc1, loc2 Location) float64 {
+	const earthRadius = 6371000 // meters
+
+	lat1 := toRadians(loc1.Latitude)
+	lat2 := toRadians(loc2.Latitude)
+	deltaLat := toRadians(loc2.Latitude - loc1.Latitude)
+	deltaLon := toRadians(loc2.Longitude - loc1.Longitude)
+
+	a := math.Sin(deltaLat/2)*math.Sin(deltaLat/2) +
+		math.Cos(lat1)*math.Cos(lat2)*
+			math.Sin(deltaLon/2)*math.Sin(deltaLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+
+	return earthRadius * c
+}
+
+func (g *GeofenceService) triggerGeofenceEvent(vehicleID string, location Location, timestamp int64) {
+	message := map[string]interface{}{
+		"vehicle_id": vehicleID,
+		"event":      "geofence_entry",
+		"location": map[string]float64{
+			"latitude":  location.Latitude,
+			"longitude": location.Longitude,
+		},
+		"timestamp": timestamp,
+	}
+
+	err := g.publisher.Publish("fleet.events", "geofence_alerts", message)
+	if err != nil {
+		fmt.Printf("Failed to publish geofence event: %v\n", err)
+	}
+}
+
+func toRadians(degree float64) float64 {
+	return degree * math.Pi / 180
+}
